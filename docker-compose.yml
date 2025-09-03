@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  slack-gitlab-bot:
+    build: .
+    container_name: slack-gitlab-notifier
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/app.db
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.slack-gitlab-bot.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.slack-gitlab-bot.tls=true"
+      - "traefik.http.routers.slack-gitlab-bot.tls.certresolver=letsencrypt"
+      - "traefik.http.services.slack-gitlab-bot.loadbalancer.server.port=3000"
+
+  # Опциональный nginx для статических файлов и проксирования
+  nginx:
+    image: nginx:alpine
+    container_name: slack-gitlab-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - slack-gitlab-bot
+    profiles:
+      - nginx
+
+volumes:
+  data:
+  logs:

@@ -1,0 +1,32 @@
+[Unit]
+Description=Slack GitLab Notifier Bot
+Documentation=https://github.com/your-repo/slack-gitlab-notifier
+After=network.target
+
+[Service]
+Type=simple
+User=nodejs
+Group=nodejs
+WorkingDirectory=/opt/slack-gitlab-bot
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node src/app.js
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+KillMode=mixed
+
+# Безопасность
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/slack-gitlab-bot/data /opt/slack-gitlab-bot/logs
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=slack-gitlab-bot
+
+[Install]
+WantedBy=multi-user.target
