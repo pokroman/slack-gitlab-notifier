@@ -1,0 +1,85 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run tests
+      run: |
+        # Создаем тестовый .env файл
+        cat > .env << EOF
+        SLACK_BOT_TOKEN=test-token
+        SLACK_SIGNING_SECRET=test-secret
+        GITLAB_APPLICATION_ID=test-id
+        GITLAB_APPLICATION_SECRET=test-secret
+        GITLAB_INSTANCE_URL=https://gitlab.com
+        PORT=3000
+        NODE_ENV=test
+        APP_URL=http://localhost:3000
+        DATABASE_PATH=./test.db
+        WEBHOOK_SECRET=test-secret
+        EOF
+        
+        # Инициализируем тестовую базу данных
+        npm run setup-db
+        
+        # Здесь можно добавить юнит-тесты когда они будут
+        echo "✅ Basic validation passed"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to server via SSH
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /opt/slack-gitlab-bot
+          
+          # Остановка сервиса
+          sudo systemctl stop slack-gitlab-bot || true
+          
+          # Backup базы данных
+          ./scripts/backup.sh || true
+          
+          # Обновление кода
+          git pull origin main
+          
+          # Установка зависимостей
+          npm ci --only=production
+          
+          # Запуск сервиса
+          sudo systemctl start slack-gitlab-bot
+          sudo systemctl enable slack-gitlab-bot
+          
+          # Проверка статуса
+          sleep 5
+          sudo systemctl status slack-gitlab-bot
+          
+          echo "🚀 Deployment completed successfully!"

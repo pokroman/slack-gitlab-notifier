@@ -1,0 +1,98 @@
+name: Docker Deploy
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Docker buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /opt/slack-gitlab-bot
+          
+          # Создание .env файла если его нет
+          if [ ! -f .env ]; then
+            echo "Creating .env file..."
+            cat > .env << EOF
+          SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_SIGNING_SECRET=${{ secrets.SLACK_SIGNING_SECRET }}
+          SLACK_CLIENT_ID=${{ secrets.SLACK_CLIENT_ID }}
+          SLACK_CLIENT_SECRET=${{ secrets.SLACK_CLIENT_SECRET }}
+          GITLAB_APPLICATION_ID=${{ secrets.GITLAB_APPLICATION_ID }}
+          GITLAB_APPLICATION_SECRET=${{ secrets.GITLAB_APPLICATION_SECRET }}
+          GITLAB_INSTANCE_URL=${{ secrets.GITLAB_INSTANCE_URL }}
+          PORT=3000
+          NODE_ENV=production
+          APP_URL=${{ secrets.APP_URL }}
+          DATABASE_PATH=./data/app.db
+          WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}
+          EOF
+          fi
+          
+          # Остановка и обновление контейнеров
+          docker-compose down || true
+          docker-compose pull
+          docker-compose up -d
+          
+          # Проверка статуса
+          sleep 10
+          docker-compose ps
+          
+          echo "🚀 Docker deployment completed!"
