@@ -1,43 +1,43 @@
-# 🚀 Руководство по развертыванию
+# 🚀 Deployment Guide
 
-## Варианты размещения
+## Hosting Options
 
-### 🎯 **Рекомендуемые варианты:**
+### 🎯 **Recommended options:**
 
-1. **VPS/VDS сервер** (DigitalOcean, Linode, Hetzner) - от $5/месяц
-2. **Облачные платформы** (Railway, Render, Heroku)
-3. **Собственный сервер** (если есть статический IP)
+1. **VPS/VDS server** (DigitalOcean, Linode, Hetzner) - from $5/month
+2. **Cloud platforms** (Railway, Render, Heroku)
+3. **Own server** (if you have static IP)
 
-## 📋 Пошаговое развертывание
+## 📋 Step-by-step Deployment
 
-### **Вариант 1: VPS с Docker (Рекомендуется)**
+### **Option 1: VPS with Docker (Recommended)**
 
-#### Шаг 1: Подготовка сервера
+#### Step 1: Server Preparation
 ```bash
-# Подключение к серверу
+# Connect to server
 ssh root@your-server-ip
 
-# Установка Docker
+# Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
 sh get-docker.sh
 
-# Установка Docker Compose
+# Install Docker Compose
 sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
-# Создание директории для приложения
+# Create application directory
 mkdir -p /opt/slack-gitlab-bot
 cd /opt/slack-gitlab-bot
 ```
 
-#### Шаг 2: Клонирование репозитория
+#### Step 2: Repository Cloning
 ```bash
 git clone https://github.com/YOUR_USERNAME/slack-gitlab-notifier.git .
 ```
 
-#### Шаг 3: Настройка окружения
+#### Step 3: Environment Setup
 ```bash
-# Создание .env файла
+# Create .env file
 cat > .env << 'EOF'
 SLACK_BOT_TOKEN=xoxb-your-real-token
 SLACK_SIGNING_SECRET=your-real-signing-secret
@@ -53,41 +53,41 @@ DATABASE_PATH=./data/app.db
 WEBHOOK_SECRET=your-strong-random-secret
 EOF
 
-# Установка прав доступа
+# Set permissions
 chmod 600 .env
 ```
 
-#### Шаг 4: Запуск приложения
+#### Step 4: Application Launch
 ```bash
 docker-compose up -d
 ```
 
-#### Шаг 5: Настройка nginx (опционально)
+#### Step 5: Nginx Configuration (optional)
 ```bash
-# Установка nginx
+# Install nginx
 apt update && apt install nginx
 
-# Копирование конфигурации
+# Copy configuration
 cp config/nginx.conf /etc/nginx/sites-available/slack-gitlab-bot
 ln -s /etc/nginx/sites-available/slack-gitlab-bot /etc/nginx/sites-enabled/
 
-# Редактирование конфигурации
+# Edit configuration
 nano /etc/nginx/sites-available/slack-gitlab-bot
-# Замените your-domain.com на ваш домен
+# Replace your-domain.com with your domain
 
-# Получение SSL сертификата
+# Get SSL certificate
 apt install certbot python3-certbot-nginx
 certbot --nginx -d your-domain.com
 
-# Перезапуск nginx
+# Restart nginx
 systemctl restart nginx
 ```
 
-### **Вариант 2: Railway (Простой)**
+### **Option 2: Railway (Simple)**
 
-1. **Зарегистрируйтесь на** [Railway.app](https://railway.app)
-2. **Подключите GitHub репозиторий**
-3. **Установите переменные окружения:**
+1. **Register at** [Railway.app](https://railway.app)
+2. **Connect GitHub repository**
+3. **Set environment variables:**
    ```
    SLACK_BOT_TOKEN=xoxb-your-token
    SLACK_SIGNING_SECRET=your-secret
@@ -96,31 +96,31 @@ systemctl restart nginx
    PORT=3000
    NODE_ENV=production
    ```
-4. **Railway автоматически развернет приложение**
+4. **Railway will automatically deploy the application**
 
-### **Вариант 3: Render (Бесплатный тариф)**
+### **Option 3: Render (Free tier)**
 
-1. **Зарегистрируйтесь на** [Render.com](https://render.com)
-2. **Создайте новый Web Service**
-3. **Подключите GitHub репозиторий**
-4. **Настройки:**
+1. **Register at** [Render.com](https://render.com)
+2. **Create new Web Service**
+3. **Connect GitHub repository**
+4. **Settings:**
    - Build Command: `npm install`
    - Start Command: `npm start`
-5. **Установите переменные окружения**
+5. **Set environment variables**
 
-## 🔧 Настройка автоматического развертывания
+## 🔧 Automatic Deployment Configuration
 
 ### GitHub Secrets
 
-В настройках вашего GitHub репозитория добавьте секреты:
+In your GitHub repository settings add secrets:
 
-**Для SSH развертывания:**
-- `HOST` - IP адрес сервера
-- `USERNAME` - имя пользователя (обычно root)
-- `SSH_KEY` - приватный SSH ключ
-- `PORT` - SSH порт (обычно 22)
+**For SSH deployment:**
+- `HOST` - server IP address
+- `USERNAME` - username (usually root)
+- `SSH_KEY` - private SSH key
+- `PORT` - SSH port (usually 22)
 
-**Токены приложения:**
+**Application tokens:**
 - `SLACK_BOT_TOKEN`
 - `SLACK_SIGNING_SECRET`
 - `SLACK_CLIENT_ID`
@@ -131,33 +131,33 @@ systemctl restart nginx
 - `APP_URL`
 - `WEBHOOK_SECRET`
 
-### Автоматическое развертывание
+### Automatic Deployment
 
-После настройки GitHub Actions каждый push в main ветку будет:
-1. ✅ Запускать тесты
-2. 🏗️ Собирать Docker образ
-3. 🚀 Развертывать на сервере
-4. ✅ Проверять статус
+After configuring GitHub Actions, each push to main branch will:
+1. ✅ Run tests
+2. 🏗️ Build Docker image
+3. 🚀 Deploy to server
+4. ✅ Check status
 
-## 🔗 Настройка URL в приложениях
+## 🔗 URL Configuration in Applications
 
-### Slack App настройки
-Замените localhost на ваш домен:
+### Slack App Settings
+Replace localhost with your domain:
 - **Request URL**: `https://your-domain.com/slack/events`
 - **OAuth Redirect URL**: `https://your-domain.com/auth/gitlab/callback`
 
-### GitLab OAuth приложение
+### GitLab OAuth Application
 - **Redirect URI**: `https://your-domain.com/auth/gitlab/callback`
 
 ### GitLab Webhooks
-В каждом проекте добавьте webhook:
+In each project add webhook:
 - **URL**: `https://your-domain.com/webhook/gitlab`
-- **Secret Token**: значение WEBHOOK_SECRET
+- **Secret Token**: WEBHOOK_SECRET value
 - **Events**: Merge request events, Comments
 
-## 📊 Мониторинг
+## 📊 Monitoring
 
-### Проверка статуса
+### Status Check
 ```bash
 # Docker
 docker-compose ps
@@ -167,22 +167,22 @@ docker-compose logs -f
 sudo systemctl status slack-gitlab-bot
 sudo journalctl -u slack-gitlab-bot -f
 
-# Тест API
+# API test
 curl https://your-domain.com
 ```
 
-### Логи приложения
+### Application Logs
 ```bash
 # Docker
 docker-compose logs slack-gitlab-bot
 
-# Файлы логов
+# Log files
 tail -f /opt/slack-gitlab-bot/logs/app.log
 ```
 
-## 🔒 Безопасность
+## 🔒 Security
 
-1. **Firewall настройки:**
+1. **Firewall settings:**
 ```bash
 ufw allow 22    # SSH
 ufw allow 80    # HTTP
@@ -190,43 +190,43 @@ ufw allow 443   # HTTPS
 ufw enable
 ```
 
-2. **Регулярные обновления:**
+2. **Regular updates:**
 ```bash
-# Автоматические обновления системы
+# Automatic system updates
 apt install unattended-upgrades
 ```
 
-3. **Backup базы данных:**
+3. **Database backup:**
 ```bash
-# Настройка cron для ежедневного backup
+# Setup cron for daily backup
 0 2 * * * cd /opt/slack-gitlab-bot && ./scripts/backup.sh
 ```
 
 ## 🆘 Troubleshooting
 
-### Частые проблемы:
+### Common Issues:
 
-**Приложение не запускается:**
+**Application won't start:**
 ```bash
 docker-compose logs
-# Проверьте .env файл и переменные окружения
+# Check .env file and environment variables
 ```
 
-**Webhook не работает:**
-- Проверьте URL доступность извне
-- Проверьте WEBHOOK_SECRET
-- Проверьте логи: `docker-compose logs | grep webhook`
+**Webhook not working:**
+- Check URL accessibility from outside
+- Check WEBHOOK_SECRET
+- Check logs: `docker-compose logs | grep webhook`
 
-**OAuth не работает:**
-- Проверьте Redirect URI в GitLab и Slack
-- Проверьте APP_URL в .env
+**OAuth not working:**
+- Check Redirect URI in GitLab and Slack
+- Check APP_URL in .env
 
-**База данных недоступна:**
+**Database not accessible:**
 ```bash
 docker-compose exec slack-gitlab-bot ls -la data/
-# Проверьте права доступа к директории data/
+# Check data/ directory permissions
 ```
 
 ---
 
-**Готово! Ваш бот будет работать 24/7 и автоматически обновляться при изменениях кода.** 🎉
+**Done! Your bot will work 24/7 and automatically update when code changes.** 🎉

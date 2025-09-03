@@ -1,7 +1,7 @@
 {
   "name": "slack-gitlab-notifier",
   "version": "1.0.0",
-  "description": "Slack бот для уведомлений из GitLab о Merge Requests и mentions",
+  "description": "Slack bot for GitLab notifications about Merge Requests and mentions",
   "main": "src/app.js",
   "scripts": {
     "start": "node src/app.js",
@@ -9,7 +9,7 @@
     "setup-db": "node src/setup-database.js"
   },
   "keywords": ["slack", "gitlab", "notifications", "webhook", "bot"],
-  "author": "Your Name",
+  "author": "Pokhabov Roman",
   "license": "MIT",
   "dependencies": {
     "@slack/bolt": "^3.15.0",

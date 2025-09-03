@@ -1,19 +1,19 @@
-# 🚀 Быстрый старт
+# 🚀 Quick Start
 
-## Локальный запуск приложения
+## Local Application Launch
 
-### 1. Установка зависимостей
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Инициализация базы данных
+### 2. Database Initialization
 ```bash
 npm run setup-db
 ```
 
-### 3. Создание .env файла
-Создайте файл `.env` с минимальными настройками:
+### 3. Create .env File
+Create `.env` file with minimal settings:
 ```bash
 cat > .env << 'EOF'
 SLACK_BOT_TOKEN=test-token
@@ -31,65 +31,65 @@ WEBHOOK_SECRET=test-webhook-secret
 EOF
 ```
 
-### 4. Запуск приложения
+### 4. Launch Application
 ```bash
-# В режиме разработки (с автоперезагрузкой)
+# In development mode (with auto-reload)
 npm run dev
 
-# Или в обычном режиме
+# Or in normal mode
 npm start
 ```
 
-## 🧪 Тестирование эндпоинтов
+## 🧪 Endpoint Testing
 
-После запуска приложение будет доступно на `http://localhost:3000`
+After launch, the application will be available at `http://localhost:3000`
 
-### Основные эндпоинты:
+### Main Endpoints:
 
-- **GET /** - статус приложения
-- **POST /webhook/gitlab** - webhook для GitLab
-- **POST /slack/events** - события от Slack
-- **GET /auth/gitlab/callback** - OAuth callback для GitLab
+- **GET /** - application status
+- **POST /webhook/gitlab** - webhook for GitLab
+- **POST /slack/events** - events from Slack
+- **GET /auth/gitlab/callback** - OAuth callback for GitLab
 
-### Примеры тестов:
+### Test Examples:
 
 ```bash
-# Проверка статуса
+# Status check
 curl http://localhost:3000
 
-# Тест GitLab webhook (без токена - получите ошибку авторизации)
+# Test GitLab webhook (without token - will get authorization error)
 curl http://localhost:3000/webhook/gitlab -X POST -H "Content-Type: application/json" -d '{"test": "data"}'
 
-# Тест GitLab webhook с токеном
+# Test GitLab webhook with token
 curl http://localhost:3000/webhook/gitlab -X POST -H "Content-Type: application/json" -H "x-gitlab-token: test-webhook-secret" -d '{"test": "data"}'
 
-# Тест Slack events (демо-режим)
+# Test Slack events (demo mode)
 curl http://localhost:3000/slack/events -X POST -H "Content-Type: application/json" -d '{"test": "slack"}'
 ```
 
-## 📋 Логи
+## 📋 Logs
 
-Приложение выводит подробные логи в консоль:
-- ✅ Успешные операции (зеленые галочки)
-- ⚠️  Предупреждения (желтые треугольники)  
-- ❌ Ошибки (красные крестики)
-- 📨 Webhook события
-- 🗄️  Операции с базой данных
+The application outputs detailed logs to console:
+- ✅ Successful operations (green checkmarks)
+- ⚠️  Warnings (yellow triangles)  
+- ❌ Errors (red crosses)
+- 📨 Webhook events
+- 🗄️  Database operations
 
-## 🔧 Настройка для продакшена
+## 🔧 Production Configuration
 
-Для использования в продакшене замените тестовые значения в `.env` на реальные:
+For production use, replace test values in `.env` with real ones:
 
-1. **Slack App** - создайте приложение на https://api.slack.com/apps
-2. **GitLab OAuth** - создайте приложение в Settings → Applications
-3. **Домен** - замените `localhost` на ваш реальный домен
-4. **Webhook Secret** - используйте сильный случайный токен
+1. **Slack App** - create application at https://api.slack.com/apps
+2. **GitLab OAuth** - create application in Settings → Applications
+3. **Domain** - replace `localhost` with your real domain
+4. **Webhook Secret** - use strong random token
 
-## 🛑 Остановка приложения
+## 🛑 Stop Application
 
 ```bash
-# Остановка процесса на порту 3000
+# Stop process on port 3000
 lsof -ti:3000 | xargs kill -9
 
-# Или просто Ctrl+C в терминале где запущено приложение
+# Or simply Ctrl+C in terminal where application is running
 ```

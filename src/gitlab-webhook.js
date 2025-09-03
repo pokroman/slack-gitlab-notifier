@@ -9,11 +9,11 @@ class GitLabWebhook {
 
 	async handleWebhook(req, res) {
 		try {
-			// Проверяем токен webhook-а если он настроен
+			// Check webhook token if it is set
 			if (this.webhookSecret) {
 				const signature = req.headers["x-gitlab-token"];
 				if (signature !== this.webhookSecret) {
-					console.warn("Неверный webhook токен");
+					console.warn("Invalid webhook token");
 					return res.status(401).json({ error: "Unauthorized" });
 				}
 			}
@@ -21,9 +21,9 @@ class GitLabWebhook {
 			const event = req.headers["x-gitlab-event"];
 			const payload = req.body;
 
-			console.log(`📨 Получен GitLab webhook: ${event}`);
+			console.log(`📨 Received GitLab webhook: ${event}`);
 
-			// Логируем webhook
+			// Log webhook
 			const logId = await this.database.logWebhook(
 				event,
 				payload.project?.id,
@@ -35,12 +35,12 @@ class GitLabWebhook {
 				await this.database.updateWebhookStatus(logId, true);
 				res.status(200).json({ status: "success" });
 			} catch (error) {
-				console.error("Ошибка при обработке webhook:", error);
+				console.error("Error processing webhook:", error);
 				await this.database.updateWebhookStatus(logId, false, error.message);
 				res.status(500).json({ error: "Processing failed" });
 			}
 		} catch (error) {
-			console.error("Ошибка webhook обработчика:", error);
+			console.error("Error webhook handler:", error);
 			res.status(500).json({ error: "Internal server error" });
 		}
 	}
@@ -56,17 +56,17 @@ class GitLabWebhook {
 				break;
 
 			case "Push Hook":
-				// Можно добавить обработку push событий если нужно
-				console.log("Push Hook получен, но не обрабатывается");
+				// You can add processing of push events if needed
+				console.log("Push Hook received, but not processed");
 				break;
 
 			default:
-				console.log(`Неизвестный тип события: ${event}`);
+				console.log(`Unknown event type: ${event}`);
 		}
 	}
 
 	async handleMergeRequestEvent(payload) {
-		const { object_attributes, user, project, assignees, reviewers } = payload;
+		const { object_attributes, project, assignees, reviewers } = payload;
 
 		if (!object_attributes) return;
 
@@ -77,10 +77,10 @@ class GitLabWebhook {
 			`🔄 Merge Request ${action}: ${mergeRequest.title} (${mergeRequest.iid})`,
 		);
 
-		// Определяем кого нужно уведомить
+		// Determine who needs to be notified
 		const usersToNotify = [];
 
-		// Уведомляем assignees
+		// Notify assignees
 		if (assignees && assignees.length > 0) {
 			for (const assignee of assignees) {
 				const user = await this.database.getUserByGitlabId(assignee.id);
@@ -93,7 +93,7 @@ class GitLabWebhook {
 			}
 		}
 
-		// Уведомляем reviewers (если есть)
+		// Notify reviewers (if there are any)
 		if (reviewers && reviewers.length > 0) {
 			for (const reviewer of reviewers) {
 				const user = await this.database.getUserByGitlabId(reviewer.id);
@@ -106,7 +106,7 @@ class GitLabWebhook {
 			}
 		}
 
-		// Отправляем уведомления
+		// Send notifications
 		for (const { user, reason } of usersToNotify) {
 			try {
 				await this.notificationService.sendMergeRequestNotification(
@@ -118,7 +118,7 @@ class GitLabWebhook {
 					payload.user,
 				);
 
-				// Логируем уведомление
+				// Log notification
 				await this.database.logNotification(
 					user.id,
 					"merge_request",
@@ -129,7 +129,7 @@ class GitLabWebhook {
 				);
 			} catch (error) {
 				console.error(
-					`Ошибка при отправке MR уведомления пользователю ${user.slack_user_id}:`,
+					`An error occurred while sending MR notification to user ${user.slack_user_id}:`,
 					error,
 				);
 			}
@@ -137,7 +137,7 @@ class GitLabWebhook {
 	}
 
 	async handleNoteEvent(payload) {
-		const { object_attributes, user, project, merge_request } = payload;
+		const { object_attributes, project, merge_request } = payload;
 
 		if (!object_attributes || !merge_request) return;
 
@@ -145,27 +145,28 @@ class GitLabWebhook {
 		const noteText = note.note;
 
 		console.log(
-			`💬 Новый комментарий в MR ${merge_request.iid}: ${noteText.substring(0, 100)}...`,
+			`💬 New comment in MR ${merge_request.iid}: ${noteText.substring(0, 100)}...`,
 		);
 
-		// Находим mentions в комментарии (@username)
+		// Find mentions in the comment (@username)
 		const mentionRegex = /@(\w+)/g;
 		const mentions = [];
-		let match;
+		let match = mentionRegex.exec(noteText);
 
-		while ((match = mentionRegex.exec(noteText)) !== null) {
+		while (match !== null) {
 			mentions.push(match[1]);
+			match = mentionRegex.exec(noteText);
 		}
 
 		if (mentions.length === 0) return;
 
-		// Получаем пользователей по упоминаниям
+		// Get users by mentions
 		const users = await this.database.getAllUsers();
 		const mentionedUsers = users.filter((user) =>
 			mentions.includes(user.gitlab_username),
 		);
 
-		// Отправляем уведомления о mentions
+		// Send notifications about mentions
 		for (const user of mentionedUsers) {
 			try {
 				await this.notificationService.sendMentionNotification(
@@ -176,7 +177,7 @@ class GitLabWebhook {
 					payload.user,
 				);
 
-				// Логируем уведомление
+				// Log notification
 				await this.database.logNotification(
 					user.id,
 					"mention",
@@ -187,14 +188,14 @@ class GitLabWebhook {
 				);
 			} catch (error) {
 				console.error(
-					`Ошибка при отправке mention уведомления пользователю ${user.slack_user_id}:`,
+					`An error occurred while sending mention notification to user ${user.slack_user_id}:`,
 					error,
 				);
 			}
 		}
 	}
 
-	// Метод для проверки подписи webhook-а (если используется secret)
+	// Method to verify webhook signature (if secret is used)
 	verifySignature(payload, signature) {
 		if (!this.webhookSecret) return true;
 
@@ -209,13 +210,13 @@ class GitLabWebhook {
 		);
 	}
 
-	// Вспомогательный метод для извлечения emails из GitLab данных
+	// Helper method to extract emails from GitLab data
 	extractEmailsFromUsers(users) {
 		if (!users || !Array.isArray(users)) return [];
 		return users.map((user) => user.email).filter((email) => email);
 	}
 
-	// Метод для получения информации о пользователе по GitLab API
+	// Method to get user information from GitLab API
 	async getGitLabUserByUsername(username, accessToken) {
 		try {
 			const axios = require("axios");
@@ -230,9 +231,9 @@ class GitLabWebhook {
 				},
 			);
 
-			return response.data[0]; // Возвращаем первого найденного пользователя
+			return response.data[0]; // Return the first found user
 		} catch (error) {
-			console.error(`Ошибка при поиске пользователя ${username}:`, error);
+			console.error(`Error searching for user ${username}:`, error);
 			return null;
 		}
 	}

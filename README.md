@@ -1,184 +1,184 @@
 # Slack-GitLab Notifier Bot
 
-Slack бот для получения уведомлений из GitLab о Merge Request-ах и mentions в комментариях.
+Slack bot for receiving notifications from GitLab about Merge Requests and mentions in comments.
 
-## 🚀 Возможности
+## 🚀 Features
 
-- 📬 Уведомления о новых Merge Request-ах, где вы назначены как исполнитель или reviewer
-- 💬 Уведомления об упоминаниях (@username) в комментариях к MR
-- 🔐 Безопасная OAuth авторизация с GitLab
-- 📊 Хранение связок между Slack и GitLab аккаунтами
-- 🛡️ Проверка webhook токенов для безопасности
+- 📬 Notifications about new Merge Requests where you are assigned as executor or reviewer
+- 💬 Notifications about mentions (@username) in MR comments
+- 🔐 Secure OAuth authorization with GitLab
+- 📊 Storage of connections between Slack and GitLab accounts
+- 🛡️ Webhook token verification for security
 
-## 📋 Требования
+## 📋 Requirements
 
 - Node.js 16+
-- GitLab аккаунт (gitlab.com или self-hosted)
-- Slack workspace с правами на создание приложений
+- GitLab account (gitlab.com or self-hosted)
+- Slack workspace with permissions to create applications
 
-## ⚙️ Установка
+## ⚙️ Installation
 
-1. **Клонируйте репозиторий:**
+1. **Clone the repository:**
 ```bash
 git clone <your-repo-url>
 cd slack-gitlab-notifier
 ```
 
-2. **Установите зависимости:**
+2. **Install dependencies:**
 ```bash
 npm install
 ```
 
-3. **Создайте файл окружения:**
+3. **Create environment file:**
 ```bash
 cp .env.example .env
 ```
 
-4. **Настройте переменные окружения в .env файле**
+4. **Configure environment variables in .env file**
 
-## 🔧 Настройка
+## 🔧 Configuration
 
-### 1. Создание Slack приложения
+### 1. Creating Slack Application
 
-1. Перейдите на https://api.slack.com/apps
-2. Нажмите "Create New App" → "From scratch"
-3. Укажите название приложения и выберите workspace
-4. В разделе "OAuth & Permissions":
-   - Добавьте Redirect URL: `https://yourdomain.com/auth/gitlab/callback`
-   - Добавьте Bot Token Scopes:
+1. Go to https://api.slack.com/apps
+2. Click "Create New App" → "From scratch"
+3. Specify application name and select workspace
+4. In "OAuth & Permissions" section:
+   - Add Redirect URL: `https://yourdomain.com/auth/gitlab/callback`
+   - Add Bot Token Scopes:
      - `chat:write`
      - `commands`
      - `users:read`
-5. В разделе "Slash Commands" создайте команды:
-   - `/gitlab-connect` - подключение GitLab аккаунта
-   - `/gitlab-status` - проверка статуса подключения
-   - `/gitlab-disconnect` - отключение аккаунта
-6. Скопируйте Bot User OAuth Token и Signing Secret в .env
+5. In "Slash Commands" section create commands:
+   - `/gitlab-connect` - connect GitLab account
+   - `/gitlab-status` - check connection status
+   - `/gitlab-disconnect` - disconnect account
+6. Copy Bot User OAuth Token and Signing Secret to .env
 
-### 2. Создание GitLab OAuth приложения
+### 2. Creating GitLab OAuth Application
 
-1. Перейдите в Settings → Applications в вашем GitLab
-2. Создайте новое приложение:
+1. Go to Settings → Applications in your GitLab
+2. Create new application:
    - Name: "Slack Notifier"
    - Redirect URI: `https://yourdomain.com/auth/gitlab/callback`
    - Scopes: `read_user`, `read_api`
-3. Скопируйте Application ID и Secret в .env
+3. Copy Application ID and Secret to .env
 
-### 3. Настройка переменных окружения
+### 3. Environment Variables Configuration
 
-Заполните .env файл:
+Fill the .env file:
 
 ```env
-# Slack App настройки
+# Slack App settings
 SLACK_BOT_TOKEN=xoxb-your-bot-token
 SLACK_SIGNING_SECRET=your-signing-secret
 SLACK_CLIENT_ID=your-client-id
 SLACK_CLIENT_SECRET=your-client-secret
 
-# GitLab OAuth настройки  
+# GitLab OAuth settings  
 GITLAB_APPLICATION_ID=your-gitlab-app-id
 GITLAB_APPLICATION_SECRET=your-gitlab-app-secret
 GITLAB_INSTANCE_URL=https://gitlab.com
 
-# Приложение настройки
+# Application settings
 PORT=3000
 NODE_ENV=production
 APP_URL=https://yourdomain.com
 
-# База данных
+# Database
 DATABASE_PATH=./data/app.db
 
-# Webhook secret для безопасности
+# Webhook secret for security
 WEBHOOK_SECRET=your-webhook-secret
 ```
 
-## 🏃‍♂️ Запуск
+## 🏃‍♂️ Running
 
-1. **Инициализация базы данных:**
+1. **Database initialization:**
 ```bash
 npm run setup-db
 ```
 
-2. **Запуск в режиме разработки:**
+2. **Run in development mode:**
 ```bash
 npm run dev
 ```
 
-3. **Запуск в продакшене:**
+3. **Run in production:**
 ```bash
 npm start
 ```
 
-## 🔗 Настройка GitLab Webhooks
+## 🔗 GitLab Webhooks Configuration
 
-1. Перейдите в Settings → Webhooks вашего GitLab проекта
-2. Добавьте webhook:
+1. Go to Settings → Webhooks in your GitLab project
+2. Add webhook:
    - URL: `https://yourdomain.com/webhook/gitlab`
-   - Secret Token: значение из WEBHOOK_SECRET
-   - Triggers: выберите "Merge request events" и "Comments"
-3. Нажмите "Add webhook"
+   - Secret Token: value from WEBHOOK_SECRET
+   - Triggers: select "Merge request events" and "Comments"
+3. Click "Add webhook"
 
-## 🎮 Использование
+## 🎮 Usage
 
-### Команды Slack
+### Slack Commands
 
-- `/gitlab-connect` - подключить GitLab аккаунт
-- `/gitlab-status` - проверить статус подключения
-- `/gitlab-disconnect` - отключить GitLab аккаунт
+- `/gitlab-connect` - connect GitLab account
+- `/gitlab-status` - check connection status
+- `/gitlab-disconnect` - disconnect GitLab account
 
-### Автоматические уведомления
+### Automatic Notifications
 
-Бот будет отправлять уведомления в следующих случаях:
+The bot will send notifications in the following cases:
 
-1. **Merge Request события:**
-   - Вы назначены исполнителем (assignee)
-   - Вы назначены reviewer-ом
-   - MR открыт, закрыт, обновлен или слит
+1. **Merge Request events:**
+   - You are assigned as executor (assignee)
+   - You are assigned as reviewer
+   - MR is opened, closed, updated or merged
 
-2. **Mentions в комментариях:**
-   - Кто-то упомянул вас (@username) в комментарии к MR
+2. **Mentions in comments:**
+   - Someone mentioned you (@username) in MR comment
 
-## 🗄️ Структура базы данных
+## 🗄️ Database Structure
 
-### Таблица users
-- `slack_user_id` - ID пользователя в Slack
-- `slack_team_id` - ID команды в Slack  
-- `gitlab_user_id` - ID пользователя в GitLab
-- `gitlab_username` - Username в GitLab
-- `gitlab_email` - Email в GitLab
-- `gitlab_token` - OAuth токен для GitLab API
+### users table
+- `slack_user_id` - Slack user ID
+- `slack_team_id` - Slack team ID  
+- `gitlab_user_id` - GitLab user ID
+- `gitlab_username` - GitLab username
+- `gitlab_email` - GitLab email
+- `gitlab_token` - OAuth token for GitLab API
 
-### Таблица notifications
-- Логи отправленных уведомлений
+### notifications table
+- Logs of sent notifications
 
-### Таблица webhook_logs
-- Логи обработанных webhook-ов
+### webhook_logs table
+- Logs of processed webhooks
 
-## 🐛 Отладка
+## 🐛 Debugging
 
-1. **Проверьте логи:**
+1. **Check logs:**
 ```bash
-# В режиме разработки логи выводятся в консоль
+# In development mode logs are printed to console
 npm run dev
 
-# В продакшене можно перенаправить в файл
+# In production you can redirect to file
 npm start > logs/app.log 2>&1
 ```
 
-2. **Проверьте webhook-и:**
-   - Убедитесь, что URL доступен из интернета
-   - Проверьте правильность Secret Token
-   - Посмотрите логи в GitLab Settings → Webhooks
+2. **Check webhooks:**
+   - Make sure URL is accessible from internet
+   - Check Secret Token correctness
+   - Look at logs in GitLab Settings → Webhooks
 
-3. **Проверьте OAuth:**
-   - Убедитесь в правильности Redirect URI
-   - Проверьте Application ID и Secret
+3. **Check OAuth:**
+   - Make sure Redirect URI is correct
+   - Check Application ID and Secret
 
-## 🔧 Развертывание
+## 🔧 Deployment
 
-### Docker (рекомендуется)
+### Docker (recommended)
 
-Создайте Dockerfile:
+Create Dockerfile:
 
 ```dockerfile
 FROM node:18-alpine
@@ -197,7 +197,7 @@ CMD ["npm", "start"]
 
 ### Systemd Service
 
-Создайте `/etc/systemd/system/slack-gitlab-bot.service`:
+Create `/etc/systemd/system/slack-gitlab-bot.service`:
 
 ```ini
 [Unit]
@@ -216,25 +216,25 @@ Restart=on-failure
 WantedBy=multi-user.target
 ```
 
-## 🤝 Вклад в проект
+## 🤝 Contributing
 
-1. Fork репозиторий
-2. Создайте feature branch
-3. Сделайте commit изменений
-4. Создайте Pull Request
+1. Fork the repository
+2. Create feature branch
+3. Make commit with changes
+4. Create Pull Request
 
-## 📄 Лицензия
+## 📄 License
 
-MIT License - смотрите [LICENSE](LICENSE) файл.
+MIT License - see [LICENSE](LICENSE) file.
 
-## ❓ Поддержка
+## ❓ Support
 
-Если у вас есть вопросы или проблемы:
+If you have questions or issues:
 
-1. Проверьте [Issues](https://github.com/your-repo/issues)
-2. Создайте новый Issue с подробным описанием проблемы
-3. Приложите логи и конфигурацию (без секретных ключей!)
+1. Check [Issues](https://github.com/your-repo/issues)
+2. Create new Issue with detailed problem description
+3. Attach logs and configuration (without secret keys!)
 
 ---
 
-**Приятного использования! 🚀**
+**Enjoy using! 🚀**

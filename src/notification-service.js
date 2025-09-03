@@ -7,7 +7,7 @@ class NotificationService {
   async sendMergeRequestNotification(user, mergeRequest, project, action, reason, author) {
     try {
       const actionText = this.getActionText(action);
-      const reasonText = reason === 'assignee' ? 'назначен исполнителем' : 'назначен reviewer-ом';
+      const reasonText = reason === 'assignee' ? 'assigned as executor' : 'assigned as reviewer';
       
       const blocks = [
         {
@@ -22,25 +22,25 @@ class NotificationService {
           fields: [
             {
               type: 'mrkdwn',
-              text: `*Проект:*\n${project.name}`
+              text: `*Project:*\n${project.name}`
             },
             {
               type: 'mrkdwn',
-              text: `*Автор:*\n${author.name}`
+              text: `*Author:*\n${author.name}`
             },
             {
               type: 'mrkdwn',
-              text: `*Ваша роль:*\n${reasonText}`
+              text: `*Your role:*\n${reasonText}`
             },
             {
               type: 'mrkdwn',
-              text: `*Статус:*\n${mergeRequest.state}`
+              text: `*Status:*\n${mergeRequest.state}`
             }
           ]
         }
       ];
 
-      // Добавляем описание если есть
+      // Add description if there is one
       if (mergeRequest.description && mergeRequest.description.trim()) {
         const description = mergeRequest.description.length > 300 
           ? mergeRequest.description.substring(0, 300) + '...'
@@ -50,12 +50,12 @@ class NotificationService {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*Описание:*\n${description}`
+            text: `*Description:*\n${description}`
           }
         });
       }
 
-      // Добавляем кнопки действий
+      // Add action buttons
       blocks.push({
         type: 'actions',
         elements: [
@@ -63,7 +63,7 @@ class NotificationService {
             type: 'button',
             text: {
               type: 'plain_text',
-              text: '👀 Посмотреть MR'
+              text: '👀 View MR'
             },
             url: mergeRequest.url,
             style: 'primary'
@@ -72,14 +72,14 @@ class NotificationService {
             type: 'button',
             text: {
               type: 'plain_text',
-              text: '📁 Открыть проект'
+              text: '📁 Open project'
             },
             url: project.web_url
           }
         ]
       });
 
-      // Добавляем дополнительную информацию
+      // Add additional information
       blocks.push({
         type: 'context',
         elements: [
@@ -97,10 +97,10 @@ class NotificationService {
         blocks: blocks
       });
 
-      console.log(`✅ MR уведомление отправлено пользователю ${user.slack_user_id}`);
+      console.log(`✅ MR notification sent to user ${user.slack_user_id}`);
 
     } catch (error) {
-      console.error('Ошибка при отправке MR уведомления:', error);
+      console.error('Error sending MR notification:', error);
       throw error;
     }
   }
@@ -116,7 +116,7 @@ class NotificationService {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `💬 *Вас упомянули в комментарии*\n\n*MR: ${mergeRequest.title}*`
+            text: `💬 *You were mentioned in a comment*\n\n*MR: ${mergeRequest.title}*`
           }
         },
         {
@@ -124,11 +124,11 @@ class NotificationService {
           fields: [
             {
               type: 'mrkdwn',
-              text: `*Проект:*\n${project.name}`
+              text: `*Project:*\n${project.name}`
             },
             {
               type: 'mrkdwn',
-              text: `*Автор комментария:*\n${author.name}`
+              text: `*Comment author:*\n${author.name}`
             }
           ]
         },
@@ -136,7 +136,7 @@ class NotificationService {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `*Комментарий:*\n${this.formatMentionText(noteText)}`
+            text: `*Comment:*\n${this.formatMentionText(noteText)}`
           }
         },
         {
@@ -146,7 +146,7 @@ class NotificationService {
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: '💬 Ответить'
+                text: '💬 Reply'
               },
               url: note.url || mergeRequest.url,
               style: 'primary'
@@ -155,7 +155,7 @@ class NotificationService {
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: '👀 Посмотреть MR'
+                text: '👀 View MR'
               },
               url: mergeRequest.url
             }
@@ -175,32 +175,32 @@ class NotificationService {
       await this.slackApp.client.chat.postMessage({
         token: process.env.SLACK_BOT_TOKEN,
         channel: `@${user.slack_user_id}`,
-        text: `Упоминание в MR: ${mergeRequest.title}`,
+        text: `Mention in MR: ${mergeRequest.title}`,
         blocks: blocks
       });
 
-      console.log(`✅ Mention уведомление отправлено пользователю ${user.slack_user_id}`);
+      console.log(`✅ Mention notification sent to user ${user.slack_user_id}`);
 
     } catch (error) {
-      console.error('Ошибка при отправке mention уведомления:', error);
+      console.error('Error sending mention notification:', error);
       throw error;
     }
   }
 
-  // Вспомогательные методы для форматирования
+  // Helper methods for formatting
 
   getActionText(action) {
     const actionMap = {
-      'open': '📖 Открыт',
-      'close': '🔒 Закрыт',
-      'reopen': '🔓 Переоткрыт',
-      'update': '📝 Обновлен',
-      'approved': '✅ Одобрен',
-      'unapproved': '❌ Отклонен',
-      'approval': '👍 Получил одобрение',
-      'unapproval': '👎 Одобрение отозвано',
-      'merge': '🔗 Слит',
-      'ready': '✨ Готов к ревью'
+      'open': '📖 Open',
+      'close': '🔒 Close',
+      'reopen': '🔓 Reopen',
+      'update': '📝 Updated',
+      'approved': '✅ Approved',
+      'unapproved': '❌ Rejected',
+      'approval': '👍 Approved',
+      'unapproval': '👎 Unapproved',
+      'merge': '🔗 Merged',
+      'ready': '✨ Ready for review'
     };
 
     return actionMap[action] || `🔄 ${action}`;
@@ -211,23 +211,23 @@ class NotificationService {
   }
 
   formatMentionText(text) {
-    // Заменяем @mentions на выделенный текст в Slack
+    // Replace @mentions with highlighted text in Slack
     return text.replace(/@(\w+)/g, '*@$1*');
   }
 
-  // Метод для отправки тестового уведомления
+  // Method for sending a test notification
   async sendTestNotification(slackUserId) {
     try {
       await this.slackApp.client.chat.postMessage({
         token: process.env.SLACK_BOT_TOKEN,
         channel: `@${slackUserId}`,
-        text: '🧪 Тестовое уведомление',
+        text: '🧪 Test notification',
         blocks: [
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: '🧪 *Тестовое уведомление*\n\nЭто тестовое сообщение для проверки работы GitLab-Slack интеграции.'
+              text: '🧪 *Test notification*\n\nThis is a test message to check the work of GitLab-Slack integration.'
             }
           },
           {
@@ -235,45 +235,45 @@ class NotificationService {
             fields: [
               {
                 type: 'mrkdwn',
-                text: '*Статус:*\nСвязь установлена ✅'
+                text: '*Status:*\nConnection established ✅'
               },
               {
                 type: 'mrkdwn',
-                text: '*Время:*\n' + new Date().toLocaleString('ru-RU')
+                text: '*Time:*\n' + new Date().toLocaleString('ru-RU')
               }
             ]
           }
         ]
       });
 
-      console.log(`✅ Тестовое уведомление отправлено пользователю ${slackUserId}`);
+      console.log(`✅ Test notification sent to user ${slackUserId}`);
       return true;
     } catch (error) {
-      console.error('Ошибка при отправке тестового уведомления:', error);
+      console.error('Error sending test notification:', error);
       return false;
     }
   }
 
-  // Метод для отправки уведомления об ошибке
+  // Method for sending an error notification
   async sendErrorNotification(slackUserId, error, context = '') {
     try {
       await this.slackApp.client.chat.postMessage({
         token: process.env.SLACK_BOT_TOKEN,
         channel: `@${slackUserId}`,
-        text: '❌ Ошибка в GitLab интеграции',
+        text: '❌ Error in GitLab integration',
         blocks: [
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `❌ *Ошибка в GitLab интеграции*\n\n${context}`
+              text: `❌ *Error in GitLab integration*\n\n${context}`
             }
           },
           {
             type: 'section',
             text: {
               type: 'mrkdwn',
-              text: `*Ошибка:*\n\`${error.message || error}\``
+              text: `*Error:*\n\`${error.message || error}\``
             }
           },
           {
@@ -281,18 +281,18 @@ class NotificationService {
             elements: [
               {
                 type: 'mrkdwn',
-                text: 'Попробуйте переподключить GitLab аккаунт командой `/gitlab-connect`'
+                text: 'Try reconnecting the GitLab account by command `/gitlab-connect`'
               }
             ]
           }
         ]
       });
     } catch (sendError) {
-      console.error('Ошибка при отправке уведомления об ошибке:', sendError);
+      console.error('Error sending error notification:', sendError);
     }
   }
 
-  // Метод для массовой отправки уведомлений
+  // Method for sending bulk notifications
   async sendBulkNotifications(notifications) {
     const results = [];
 
@@ -319,7 +319,7 @@ class NotificationService {
 
         results.push({ success: true, userId: notification.user.slack_user_id });
       } catch (error) {
-        console.error(`Ошибка при отправке уведомления пользователю ${notification.user.slack_user_id}:`, error);
+        console.error(`Error sending notification to user ${notification.user.slack_user_id}:`, error);
         results.push({ 
           success: false, 
           userId: notification.user.slack_user_id, 

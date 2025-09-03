@@ -1,79 +1,79 @@
 #!/bin/bash
 
-# Скрипт установки Slack-GitLab Notifier Bot
+# Script for installing Slack-GitLab Notifier Bot
 
 set -e
 
-echo "🚀 Установка Slack-GitLab Notifier Bot..."
+echo "🚀 Installing Slack-GitLab Notifier Bot..."
 
-# Проверка прав суперпользователя
+# Check superuser privileges
 if [[ $EUID -ne 0 ]]; then
-   echo "❌ Этот скрипт должен быть запущен с правами root (sudo)" 
+   echo "❌ This script must be run with superuser privileges (sudo)" 
    exit 1
 fi
 
-# Установка Node.js если не установлен
+# Install Node.js if not installed
 if ! command -v node &> /dev/null; then
-    echo "📦 Устанавливаем Node.js..."
+    echo "📦 Installing Node.js..."
     curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
     apt-get install -y nodejs
 fi
 
-# Создание пользователя для сервиса
+# Create user for service
 if ! id "nodejs" &>/dev/null; then
-    echo "👤 Создаем пользователя nodejs..."
+    echo "👤 Creating nodejs user..."
     useradd --system --no-create-home --shell /bin/false nodejs
 fi
 
-# Создание директорий
-echo "📁 Создаем директории..."
+# Create directories
+echo "📁 Creating directories..."
 mkdir -p /opt/slack-gitlab-bot
 mkdir -p /opt/slack-gitlab-bot/data
 mkdir -p /opt/slack-gitlab-bot/logs
 mkdir -p /var/log/slack-gitlab-bot
 
-# Копирование файлов
-echo "📋 Копируем файлы приложения..."
+# Copying files
+echo "📋 Copying application files..."
 cp -r ./* /opt/slack-gitlab-bot/
 cd /opt/slack-gitlab-bot
 
-# Установка зависимостей
-echo "📦 Устанавливаем зависимости..."
+# Installing dependencies
+echo "📦 Installing dependencies..."
 npm ci --only=production
 
-# Настройка прав доступа
-echo "🔐 Настраиваем права доступа..."
+# Setting access permissions
+echo "🔐 Setting access permissions..."
 chown -R nodejs:nodejs /opt/slack-gitlab-bot
 chown -R nodejs:nodejs /var/log/slack-gitlab-bot
 chmod +x /opt/slack-gitlab-bot/scripts/*.sh
 
-# Создание .env файла если не существует
+# Creating .env file if it doesn't exist
 if [ ! -f "/opt/slack-gitlab-bot/.env" ]; then
-    echo "⚙️  Создаем файл конфигурации..."
+    echo "⚙️  Creating configuration file..."
     cp /opt/slack-gitlab-bot/.env.example /opt/slack-gitlab-bot/.env
     chown nodejs:nodejs /opt/slack-gitlab-bot/.env
     chmod 600 /opt/slack-gitlab-bot/.env
     
-    echo "❗ ВАЖНО: Отредактируйте файл /opt/slack-gitlab-bot/.env с вашими настройками!"
+    echo "❗ IMPORTANT: Edit the /opt/slack-gitlab-bot/.env file with your settings!"
 fi
 
-# Установка systemd сервиса
-echo "🔧 Устанавливаем systemd сервис..."
+# Installing systemd service
+echo "🔧 Installing systemd service..."
 cp /opt/slack-gitlab-bot/slack-gitlab-bot.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable slack-gitlab-bot
 
-# Инициализация базы данных
-echo "🗄️  Инициализируем базу данных..."
+# Initializing database
+echo "🗄️  Initializing database..."
 sudo -u nodejs node /opt/slack-gitlab-bot/src/setup-database.js
 
-echo "✅ Установка завершена!"
+echo "✅ Installation completed!"
 echo ""
-echo "📝 Следующие шаги:"
-echo "1. Отредактируйте /opt/slack-gitlab-bot/.env с вашими настройками"
-echo "2. Запустите сервис: sudo systemctl start slack-gitlab-bot"
-echo "3. Проверьте статус: sudo systemctl status slack-gitlab-bot"
-echo "4. Просмотрите логи: sudo journalctl -u slack-gitlab-bot -f"
+echo "📝 Next steps:"
+echo "1. Edit the /opt/slack-gitlab-bot/.env file with your settings"
+echo "2. Start the service: sudo systemctl start slack-gitlab-bot"
+echo "3. Check the status: sudo systemctl status slack-gitlab-bot"
+echo "4. View logs: sudo journalctl -u slack-gitlab-bot -f"
 echo ""
-echo "🌐 Приложение будет доступно на порту 3000"
-echo "📚 Документация: https://github.com/your-repo/slack-gitlab-notifier"
+echo "🌐 The application will be available on port 3000"
+echo "📚 Documentation: https://github.com/your-repo/slack-gitlab-notifier"

@@ -24,7 +24,7 @@ jobs:
     
     - name: Run tests
       run: |
-        # Создаем тестовый .env файл
+        # Create test .env file
         cat > .env << EOF
         SLACK_BOT_TOKEN=test-token
         SLACK_SIGNING_SECRET=test-secret
@@ -38,10 +38,10 @@ jobs:
         WEBHOOK_SECRET=test-secret
         EOF
         
-        # Инициализируем тестовую базу данных
+        # Initialize test database
         npm run setup-db
         
-        # Здесь можно добавить юнит-тесты когда они будут
+        # Here you can add unit tests when they will be
         echo "✅ Basic validation passed"
 
   deploy:
@@ -62,23 +62,23 @@ jobs:
         script: |
           cd /opt/slack-gitlab-bot
           
-          # Остановка сервиса
+          # Stop service
           sudo systemctl stop slack-gitlab-bot || true
           
-          # Backup базы данных
+          # Backup database
           ./scripts/backup.sh || true
           
-          # Обновление кода
+          # Update code
           git pull origin main
           
-          # Установка зависимостей
+          # Install dependencies
           npm ci --only=production
           
-          # Запуск сервиса
+          # Start service
           sudo systemctl start slack-gitlab-bot
           sudo systemctl enable slack-gitlab-bot
           
-          # Проверка статуса
+          # Check status
           sleep 5
           sudo systemctl status slack-gitlab-bot
           

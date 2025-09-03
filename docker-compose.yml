@@ -28,7 +28,7 @@ services:
       - "traefik.http.routers.slack-gitlab-bot.tls.certresolver=letsencrypt"
       - "traefik.http.services.slack-gitlab-bot.loadbalancer.server.port=3000"
 
-  # Опциональный nginx для статических файлов и проксирования
+  # Optional nginx for static files and proxying
   nginx:
     image: nginx:alpine
     container_name: slack-gitlab-nginx

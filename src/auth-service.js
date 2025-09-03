@@ -9,21 +9,21 @@ class AuthService {
     this.clientSecret = process.env.GITLAB_APPLICATION_SECRET;
     this.redirectUri = `${process.env.APP_URL}/auth/gitlab/callback`;
     
-    // Временное хранение состояний OAuth (в продакшене использовать Redis)
+    // Temporary OAuth state storage (use Redis in production)
     this.oauthStates = new Map();
   }
 
   generateAuthUrl(slackUserId, slackTeamId) {
     const state = crypto.randomBytes(32).toString('hex');
     
-    // Сохраняем состояние для последующей проверки
+    // Save state for subsequent verification
     this.oauthStates.set(state, {
       slackUserId,
       slackTeamId,
       timestamp: Date.now()
     });
 
-    // Очистка старых состояний (старше 10 минут)
+    // Cleanup old states (older than 10 minutes)
     this.cleanupExpiredStates();
 
     const params = new URLSearchParams({
@@ -42,13 +42,13 @@ class AuthService {
       const { code, state, error } = req.query;
 
       if (error) {
-        console.error('OAuth ошибка:', error);
+        console.error('OAuth error:', error);
         return res.status(400).send(`
           <html>
             <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-              <h2 style="color: #e74c3c;">❌ Ошибка авторизации</h2>
-              <p>Произошла ошибка при подключении к GitLab: ${error}</p>
-              <p><a href="#" onclick="window.close()">Закрыть окно</a></p>
+              <h2 style="color: #e74c3c;">❌ Authorization error</h2>
+              <p>An error occurred while connecting to GitLab: ${error}</p>
+              <p><a href="#" onclick="window.close()">Close window</a></p>
             </body>
           </html>
         `);
@@ -58,38 +58,38 @@ class AuthService {
         return res.status(400).send(`
           <html>
             <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-              <h2 style="color: #e74c3c;">❌ Неверные параметры</h2>
-              <p>Отсутствуют необходимые параметры авторизации</p>
-              <p><a href="#" onclick="window.close()">Закрыть окно</a></p>
+              <h2 style="color: #e74c3c;">❌ Invalid parameters</h2>
+              <p>Missing required authorization parameters</p>
+              <p><a href="#" onclick="window.close()">Close window</a></p>
             </body>
           </html>
         `);
       }
 
-      // Проверяем состояние
+      // Check state
       const stateData = this.oauthStates.get(state);
       if (!stateData) {
         return res.status(400).send(`
           <html>
             <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-              <h2 style="color: #e74c3c;">❌ Недействительное состояние</h2>
-              <p>Сессия авторизации истекла или недействительна</p>
-              <p><a href="#" onclick="window.close()">Закрыть окно</a></p>
+              <h2 style="color: #e74c3c;">❌ Invalid state</h2>
+              <p>Authorization session expired or invalid</p>
+              <p><a href="#" onclick="window.close()">Close window</a></p>
             </body>
           </html>
         `);
       }
 
-      // Удаляем состояние после использования
+      // Delete state after use
       this.oauthStates.delete(state);
 
-      // Обмениваем код на токен
+      // Exchange code for token
       const tokenData = await this.exchangeCodeForToken(code);
       
-      // Получаем информацию о пользователе GitLab
+      // Get user information from GitLab
       const userData = await this.getGitLabUserInfo(tokenData.access_token);
 
-      // Сохраняем данные пользователя в базе
+      // Save user data to database
       await this.database.saveUser(stateData.slackUserId, stateData.slackTeamId, {
         id: userData.id,
         username: userData.username,
@@ -98,21 +98,21 @@ class AuthService {
         refresh_token: tokenData.refresh_token
       });
 
-      console.log(`✅ Пользователь ${userData.username} (${userData.email}) подключен к Slack пользователю ${stateData.slackUserId}`);
+      console.log(`✅ User ${userData.username} (${userData.email}) connected to Slack user ${stateData.slackUserId}`);
 
-      // Возвращаем страницу успеха
+      // Return success page
       res.send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
             <div style="max-width: 500px; margin: 0 auto;">
-              <h2 style="color: #27ae60;">✅ Успешно подключено!</h2>
+              <h2 style="color: #27ae60;">✅ Successfully connected!</h2>
               <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <p><strong>GitLab аккаунт:</strong> ${userData.username}</p>
+                <p><strong>GitLab account:</strong> ${userData.username}</p>
                 <p><strong>Email:</strong> ${userData.email}</p>
               </div>
-              <p style="color: #666;">Теперь вы будете получать уведомления о Merge Request-ах и mentions из GitLab в Slack!</p>
+              <p style="color: #666;">Now you will receive notifications about Merge Requests and mentions from GitLab in Slack!</p>
               <button onclick="window.close()" style="background: #007cba; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px;">
-                Закрыть окно
+                Close window
               </button>
             </div>
           </body>
@@ -120,13 +120,13 @@ class AuthService {
       `);
 
     } catch (error) {
-      console.error('Ошибка в OAuth callback:', error);
+      console.error('OAuth callback error:', error);
       res.status(500).send(`
         <html>
           <body style="font-family: Arial, sans-serif; text-align: center; padding: 50px;">
-            <h2 style="color: #e74c3c;">❌ Ошибка сервера</h2>
-            <p>Произошла ошибка при обработке авторизации</p>
-            <p><a href="#" onclick="window.close()">Закрыть окно</a></p>
+            <h2 style="color: #e74c3c;">❌ Server error</h2>
+            <p>An error occurred while processing authorization</p>
+            <p><a href="#" onclick="window.close()">Close window</a></p>
           </body>
         </html>
       `);
@@ -145,8 +145,8 @@ class AuthService {
 
       return response.data;
     } catch (error) {
-      console.error('Ошибка при обмене кода на токен:', error.response?.data || error.message);
-      throw new Error('Не удалось получить токен доступа');
+      console.error('Error exchanging code for token:', error.response?.data || error.message);
+      throw new Error('Failed to get access token');
     }
   }
 
@@ -160,8 +160,8 @@ class AuthService {
 
       return response.data;
     } catch (error) {
-      console.error('Ошибка при получении информации о пользователе:', error.response?.data || error.message);
-      throw new Error('Не удалось получить информацию о пользователе GitLab');
+      console.error('Error getting user information:', error.response?.data || error.message);
+      throw new Error('Failed to get user information from GitLab');
     }
   }
 
@@ -176,8 +176,8 @@ class AuthService {
 
       return response.data;
     } catch (error) {
-      console.error('Ошибка при обновлении токена:', error.response?.data || error.message);
-      throw new Error('Не удалось обновить токен доступа');
+      console.error('Error refreshing token:', error.response?.data || error.message);
+      throw new Error('Failed to refresh token');
     }
   }
 
@@ -186,7 +186,7 @@ class AuthService {
     const expiredStates = [];
 
     for (const [state, data] of this.oauthStates.entries()) {
-      // Удаляем состояния старше 10 минут
+      // Delete states older than 10 minutes
       if (now - data.timestamp > 10 * 60 * 1000) {
         expiredStates.push(state);
       }
@@ -197,7 +197,7 @@ class AuthService {
     });
   }
 
-  // Проверка валидности токена
+  // Check token validity
   async validateToken(accessToken) {
     try {
       const response = await axios.get(`${this.gitlabUrl}/api/v4/user`, {

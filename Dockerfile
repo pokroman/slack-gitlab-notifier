@@ -1,35 +1,35 @@
 FROM node:18-alpine
 
-# Устанавливаем рабочую директорию
+# Set working directory
 WORKDIR /app
 
-# Устанавливаем зависимости для SQLite3
+# Install dependencies for SQLite3
 RUN apk add --no-cache python3 make g++
 
-# Копируем package файлы
+# Copy package files
 COPY package*.json ./
 
-# Устанавливаем зависимости
+# Install dependencies
 RUN npm ci --only=production
 
-# Копируем исходный код
+# Copy source code
 COPY src/ ./src/
 
-# Создаем директорию для базы данных
+# Create directory for database
 RUN mkdir -p /app/data
 
-# Создаем пользователя для безопасности
+# Create user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Меняем владельца директорий
+# Change directory owner
 RUN chown -R nodejs:nodejs /app
 
-# Переключаемся на пользователя nodejs
+# Switch to nodejs user
 USER nodejs
 
-# Открываем порт
+# Open port
 EXPOSE 3000
 
-# Команда запуска
+# Run command
 CMD ["node", "src/app.js"]

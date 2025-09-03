@@ -67,7 +67,7 @@ jobs:
         script: |
           cd /opt/slack-gitlab-bot
           
-          # Создание .env файла если его нет
+          # Create .env file if it doesn't exist
           if [ ! -f .env ]; then
             echo "Creating .env file..."
             cat > .env << EOF
@@ -86,12 +86,12 @@ jobs:
           EOF
           fi
           
-          # Остановка и обновление контейнеров
+          # Stop and update containers
           docker-compose down || true
           docker-compose pull
           docker-compose up -d
           
-          # Проверка статуса
+          # Check status
           sleep 10
           docker-compose ps
           

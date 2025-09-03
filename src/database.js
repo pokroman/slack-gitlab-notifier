@@ -9,7 +9,7 @@ class Database {
 
   async init() {
     return new Promise((resolve, reject) => {
-      // Создаем директорию для базы данных если её нет
+      // Create database directory if it doesn't exist
       const dbDir = path.dirname(this.dbPath);
       const fs = require('fs');
       if (!fs.existsSync(dbDir)) {
@@ -18,10 +18,10 @@ class Database {
 
       this.db = new sqlite3.Database(this.dbPath, (err) => {
         if (err) {
-          console.error('Ошибка при открытии базы данных:', err);
+          console.error('Error opening database:', err);
           reject(err);
         } else {
-          console.log('Подключено к SQLite базе данных');
+          console.log('Connected to SQLite database');
           this.createTables().then(resolve).catch(reject);
         }
       });
@@ -79,7 +79,7 @@ class Database {
           if (err) {
             reject(err);
           } else {
-            console.log('Таблицы базы данных созданы успешно');
+            console.log('Database tables created successfully');
             resolve();
           }
         });
@@ -87,7 +87,7 @@ class Database {
     });
   }
 
-  // Методы для работы с пользователями
+  // Methods for working with users
   async saveUser(slackUserId, slackTeamId, gitlabData) {
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
@@ -196,7 +196,7 @@ class Database {
     });
   }
 
-  // Методы для логирования уведомлений
+  // Methods for logging notifications
   async logNotification(userId, eventType, projectId, mergeRequestId, objectId, eventData) {
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
@@ -224,7 +224,7 @@ class Database {
     });
   }
 
-  // Методы для логирования webhook-ов
+  // Methods for logging webhooks
   async logWebhook(eventType, projectId, objectId, processed = false, errorMessage = null) {
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
@@ -261,14 +261,14 @@ class Database {
     });
   }
 
-  // Метод для закрытия соединения с базой данных
+  // Method for closing the database connection
   close() {
     if (this.db) {
       this.db.close((err) => {
         if (err) {
-          console.error('Ошибка при закрытии базы данных:', err);
+          console.error('Error closing database:', err);
         } else {
-          console.log('Соединение с базой данных закрыто');
+          console.log('Database connection closed');
         }
       });
     }

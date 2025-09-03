@@ -2,25 +2,25 @@ require('dotenv').config();
 const Database = require('./database');
 
 async function setupDatabase() {
-  console.log('🗄️  Инициализация базы данных...');
+  console.log('🗄️  Initializing database...');
   
   try {
     const database = new Database();
     await database.init();
     
-    console.log('✅ База данных успешно инициализирована!');
-    console.log('📍 Путь к базе данных:', database.dbPath);
+    console.log('✅ Database successfully initialized!');
+    console.log('📍 Database path:', database.dbPath);
     
-    // Создаем несколько тестовых записей для демонстрации
-    console.log('\n📊 Статистика таблиц:');
+    // Create several test records for demonstration
+    console.log('\n📊 Table statistics:');
     
     const users = await database.getAllUsers();
-    console.log(`👥 Пользователи: ${users.length}`);
+    console.log(`👥 Users: ${users.length}`);
     
     database.close();
     
   } catch (error) {
-    console.error('❌ Ошибка при инициализации базы данных:', error);
+    console.error('❌ Error initializing database:', error);
     process.exit(1);
   }
 }

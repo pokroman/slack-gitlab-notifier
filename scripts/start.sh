@@ -4,39 +4,39 @@
 
 set -e
 
-echo "🚀 Запуск Slack-GitLab Notifier Bot..."
+echo "🚀 Starting Slack-GitLab Notifier Bot..."
 
-# Проверка файла конфигурации
+# Check configuration file
 if [ ! -f ".env" ]; then
-    echo "❌ Файл .env не найден!"
-    echo "📋 Скопируйте .env.example в .env и заполните необходимые переменные"
+    echo "❌ .env file not found!"
+    echo "📋 Copy .env.example to .env and fill in the necessary variables"
     exit 1
 fi
 
-# Проверка Node.js
+# Check Node.js
 if ! command -v node &> /dev/null; then
-    echo "❌ Node.js не установлен!"
-    echo "📦 Установите Node.js 18+ для продолжения"
+    echo "❌ Node.js not installed!"
+    echo "📦 Install Node.js 18+ to continue"
     exit 1
 fi
 
-# Проверка зависимостей
+# Check dependencies
 if [ ! -d "node_modules" ]; then
-    echo "📦 Устанавливаем зависимости..."
+    echo "📦 Installing dependencies..."
     npm install
 fi
 
-# Создание директорий
+# Create directories
 mkdir -p data logs
 
-# Инициализация базы данных если она не существует
+# Initializing database if it doesn't exist
 if [ ! -f "data/app.db" ]; then
-    echo "🗄️  Инициализируем базу данных..."
+    echo "🗄️  Initializing database..."
     npm run setup-db
 fi
 
-# Запуск приложения
-echo "⚡ Запускаем приложение..."
+# Start application
+echo "⚡ Starting application..."
 if [ "$NODE_ENV" = "production" ]; then
     npm start
 else

@@ -6,39 +6,39 @@ const GitLabWebhook = require('./gitlab-webhook');
 const AuthService = require('./auth-service');
 const NotificationService = require('./notification-service');
 
-// Инициализация Slack приложения
+// Initialize Slack application
 let slackApp;
 try {
   slackApp = new App({
     token: process.env.SLACK_BOT_TOKEN,
     signingSecret: process.env.SLACK_SIGNING_SECRET,
-    socketMode: false, // используем HTTP mode для webhooks
+    socketMode: false, // use HTTP mode for webhooks
   });
 } catch (error) {
-  console.warn('⚠️  Slack App не инициализирован (возможно неверные токены):', error.message);
-  // Создаем заглушку для демонстрации
+  console.warn('⚠️  Slack App not initialized (possibly invalid tokens):', error.message);
+  // Create stub for demonstration
   slackApp = {
     command: () => {},
     client: {
       chat: {
-        postMessage: async () => console.log('📨 [DEMO] Сообщение отправлено в Slack')
+        postMessage: async () => console.log('📨 [DEMO] Message sent to Slack')
       }
     }
   };
 }
 
-// Инициализация Express сервера
+// Initialize Express server
 const expressApp = express();
 expressApp.use(express.json());
 expressApp.use(express.urlencoded({ extended: true }));
 
-// Инициализация сервисов
+// Initialize services
 const database = new Database();
 const authService = new AuthService(database);
 const notificationService = new NotificationService(slackApp, database);
 const gitlabWebhook = new GitLabWebhook(database, notificationService);
 
-// Slack команды и события
+// Slack commands and events
 slackApp.command('/gitlab-connect', async ({ command, ack, respond, client }) => {
   await ack();
   
@@ -47,13 +47,13 @@ slackApp.command('/gitlab-connect', async ({ command, ack, respond, client }) =>
     
     await respond({
       response_type: 'ephemeral',
-      text: 'Подключите ваш GitLab аккаунт',
+      text: 'Connect your GitLab account',
       blocks: [
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: '🔗 *Подключение к GitLab*\n\nДля получения уведомлений о Merge Request-ах и mentions из GitLab, подключите ваш аккаунт:'
+            text: '🔗 *Connect to GitLab*\n\nTo receive notifications about Merge Requests and mentions from GitLab, connect your account:'
           }
         },
         {
@@ -63,7 +63,7 @@ slackApp.command('/gitlab-connect', async ({ command, ack, respond, client }) =>
               type: 'button',
               text: {
                 type: 'plain_text',
-                text: 'Подключить GitLab'
+                text: 'Connect GitLab'
               },
               url: authUrl,
               style: 'primary'
@@ -73,10 +73,10 @@ slackApp.command('/gitlab-connect', async ({ command, ack, respond, client }) =>
       ]
     });
   } catch (error) {
-    console.error('Ошибка при создании ссылки авторизации:', error);
+    console.error('Error creating authorization link:', error);
     await respond({
       response_type: 'ephemeral',
-      text: '❌ Произошла ошибка при создании ссылки для подключения. Попробуйте позже.'
+      text: '❌ An error occurred while creating the connection link. Please try again later.'
     });
   }
 });
@@ -90,19 +90,19 @@ slackApp.command('/gitlab-status', async ({ command, ack, respond }) => {
     if (user && user.gitlab_token) {
       await respond({
         response_type: 'ephemeral',
-        text: `✅ Ваш GitLab аккаунт подключен!\n📧 GitLab email: ${user.gitlab_email}\n🆔 GitLab ID: ${user.gitlab_user_id}`
+        text: `✅ Your GitLab account is connected!\n📧 GitLab email: ${user.gitlab_email}\n🆔 GitLab ID: ${user.gitlab_user_id}`
       });
     } else {
       await respond({
         response_type: 'ephemeral',
-        text: '❌ GitLab аккаунт не подключен. Используйте `/gitlab-connect` для подключения.'
+        text: '❌ GitLab account is not connected. Use `/gitlab-connect` to connect.'
       });
     }
   } catch (error) {
-    console.error('Ошибка при проверке статуса:', error);
+    console.error('Error checking status:', error);
     await respond({
       response_type: 'ephemeral',
-      text: '❌ Произошла ошибка при проверке статуса подключения.'
+      text: '❌ An error occurred while checking connection status.'
     });
   }
 });
@@ -114,18 +114,18 @@ slackApp.command('/gitlab-disconnect', async ({ command, ack, respond }) => {
     await database.removeUser(command.user_id, command.team_id);
     await respond({
       response_type: 'ephemeral',
-      text: '✅ GitLab аккаунт успешно отключен от Slack.'
+      text: '✅ GitLab account successfully disconnected from Slack.'
     });
   } catch (error) {
-    console.error('Ошибка при отключении:', error);
+    console.error('Error disconnecting:', error);
     await respond({
       response_type: 'ephemeral',
-      text: '❌ Произошла ошибка при отключении аккаунта.'
+      text: '❌ An error occurred while disconnecting the account.'
     });
   }
 });
 
-// Express маршруты
+// Express routes
 expressApp.get('/', (req, res) => {
   res.json({ 
     message: 'Slack-GitLab Notifier Bot',
@@ -134,45 +134,45 @@ expressApp.get('/', (req, res) => {
   });
 });
 
-// Маршрут для OAuth callback от GitLab
+// Route for OAuth callback from GitLab
 expressApp.get('/auth/gitlab/callback', authService.handleCallback.bind(authService));
 
-// Маршрут для получения webhooks от GitLab
+// Route for receiving webhooks from GitLab
 expressApp.post('/webhook/gitlab', gitlabWebhook.handleWebhook.bind(gitlabWebhook));
 
-// Slack события (обработчик для Slack App)
+// Slack events (handler for Slack App)
 if (slackApp.receiver && slackApp.receiver.router) {
   expressApp.use('/slack/events', slackApp.receiver.router);
 } else {
-  // Заглушка для локального тестирования без настроенных Slack токенов
+  // Stub for local testing without configured Slack tokens
   expressApp.post('/slack/events', (req, res) => {
     res.status(200).json({ message: 'Slack events endpoint (demo mode)' });
   });
 }
 
-// Инициализация и запуск
+// Initialize and start
 async function start() {
   try {
-    // Инициализация базы данных
+    // Initialize database
     await database.init();
-    console.log('✅ База данных инициализирована');
+    console.log('✅ Database initialized');
 
-    // Запуск Express сервера
+    // Start Express server
     const port = process.env.PORT || 3000;
     expressApp.listen(port, () => {
-      console.log(`🚀 Сервер запущен на порту ${port}`);
-      console.log(`📝 Настройте GitLab webhook URL: ${process.env.APP_URL}/webhook/gitlab`);
+      console.log(`🚀 Server started on port ${port}`);
+      console.log(`📝 Configure GitLab webhook URL: ${process.env.APP_URL}/webhook/gitlab`);
       console.log(`🔗 OAuth callback URL: ${process.env.APP_URL}/auth/gitlab/callback`);
     });
 
-    console.log('⚡️ Slack-GitLab Notifier готов к работе!');
+    console.log('⚡️ Slack-GitLab Notifier ready to work!');
   } catch (error) {
-    console.error('❌ Ошибка при запуске приложения:', error);
+    console.error('❌ Error while starting the application:', error);
     process.exit(1);
   }
 }
 
-// Обработка ошибок
+// Error handling
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

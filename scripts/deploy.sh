@@ -1,63 +1,63 @@
 #!/bin/bash
 
-# Скрипт развертывания с использованием Docker
+# Script for deployment using Docker
 
 set -e
 
-echo "🚀 Развертывание Slack-GitLab Notifier Bot..."
+echo "🚀 Deployment Slack-GitLab Notifier Bot..."
 
-# Проверка Docker
+# Check Docker
 if ! command -v docker &> /dev/null; then
-    echo "❌ Docker не установлен!"
-    echo "📦 Установите Docker для продолжения"
+    echo "❌ Docker not installed!"
+    echo "📦 Install Docker to continue"
     exit 1
 fi
 
-# Проверка Docker Compose
+# Check Docker Compose
 if ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker Compose не установлен!"
-    echo "📦 Установите Docker Compose для продолжения"
+    echo "❌ Docker Compose not installed!"
+    echo "📦 Install Docker Compose to continue"
     exit 1
 fi
 
-# Проверка файла конфигурации
+# Check configuration file
 if [ ! -f ".env" ]; then
-    echo "❌ Файл .env не найден!"
-    echo "📋 Скопируйте .env.example в .env и заполните необходимые переменные"
+    echo "❌ .env file not found!"
+    echo "📋 Copy .env.example to .env and fill in the necessary variables"
     exit 1
 fi
 
-# Создание директорий
-echo "📁 Создаем необходимые директории..."
+# Create directories
+echo "📁 Creating necessary directories..."
 mkdir -p data logs
 
-# Остановка существующих контейнеров
-echo "🛑 Остановка существующих контейнеров..."
+# Stop existing containers
+echo "🛑 Stopping existing containers..."
 docker-compose down || true
 
-# Сборка и запуск
-echo "🔨 Сборка и запуск контейнеров..."
+# Build and start containers
+echo "🔨 Building and starting containers..."
 docker-compose up -d --build
 
-# Проверка статуса
-echo "⏳ Ожидание запуска сервисов..."
+# Check status
+echo "⏳ Waiting for services to start..."
 sleep 10
 
 if docker-compose ps | grep -q "Up"; then
-    echo "✅ Сервисы успешно запущены!"
+    echo "✅ Services successfully started!"
     
-    # Показать логи
-    echo "📋 Последние логи:"
+    # Show logs
+    echo "📋 Latest logs:"
     docker-compose logs --tail=20
     
     echo ""
-    echo "🌐 Приложение доступно на http://localhost:3000"
-    echo "📊 Статус контейнеров: docker-compose ps"
-    echo "📋 Просмотр логов: docker-compose logs -f"
-    echo "🛑 Остановка: docker-compose down"
+    echo "🌐 The application is available at http://localhost:3000"
+    echo "📊 Container status: docker-compose ps"
+    echo "📋 View logs: docker-compose logs -f"
+    echo "🛑 Stop: docker-compose down"
 else
-    echo "❌ Ошибка при запуске сервисов!"
-    echo "📋 Логи ошибок:"
+    echo "❌ Error starting services!"
+    echo "📋 Error logs:"
     docker-compose logs
     exit 1
 fi
